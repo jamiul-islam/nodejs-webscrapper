@@ -9,22 +9,26 @@ app.use(cors());
 const url =
   "https://www.otomoto.pl/ciezarowe/uzytkowe/mercedes-benz/q-actros?search%5Bfilter_enum_damaged%5D=0&search%5Border%5D=created_at+%3Adesc&page=1";
 
-app.get("/", function (req, res) {
+app.get("/", function (req: any, res: { json: (arg0: string) => void }) {
   res.json("This is my webscraper");
 });
 
-// global variables
-var pageInfo = [];
+type trucks = {
+  title: string;
+  url: string;
+};
 
-app.get("/result", (req, res) => {
+app.get("/result", (req: any, res: { json: (arg0: trucks[]) => void }) => {
   axios(url)
-    .then((response) => {
+    .then((response: { data: any }) => {
       const html = response.data;
       const $ = cheerio.load(html);
-      const trucks = [];
+      const trucks: trucks[] = [];
 
       $(".fc-item__title", html).each(function () {
+        // @ts-ignore
         const title = $(this).text();
+        // @ts-ignore
         const url = $(this).find("a").attr("href");
         trucks.push({
           title,
@@ -33,33 +37,44 @@ app.get("/result", (req, res) => {
       });
       res.json(trucks);
     })
-    .catch((err) => console.log(err));
+    .catch((err: any) => console.log(err));
 });
 
 // global function for getting total page number
 // error-checking thought: getNextPageUrl will run (totalPageNumber - 1) times
+type page = {
+  number: number;
+};
+
+var pageInfo: pageInfo[] = [];
+
+type pageInfo = {
+  totalPage: number;
+};
+
 axios(url)
-  .then((response) => {
+  .then((response: { data: any }) => {
     const html = response.data;
     const $ = cheerio.load(html);
-    const page = [];
+    const page: any = [];
 
     $(".pagination-item", html).each(function () {
+      // @ts-ignore
       const number = $(this).text();
       page.push(number);
     });
-    const totalPage = parseInt(page[page.length - 2]);
+    const totalPage: number = parseInt(page[page.length - 2]);
     pageInfo.push({
       totalPage: totalPage,
     });
     // console.log(pageInfo);
   })
-  .catch((err) => console.log(err));
+  .catch((err: any) => console.log(err));
 
 // /////////////////////////////////////////////////
 // Add getNextPageUrl function to iterate over pages
 // /////////////////////////////////////////////////
-const getNextPageUrl = (nextPage = 1, url) => {
+const getNextPageUrl = (nextPage = 1, url: any) => {
   return `https://www.otomoto.pl/ciezarowe/uzytkowe/mercedes-benz/q-actros?search%5Bfilter_enum_damaged%5D=0&search%5Border%5D=created_at+%3Adesc&page=${nextPage}`;
   // return (url + "&page=" + nextPage)
 };
@@ -71,15 +86,23 @@ const getNextPageUrl = (nextPage = 1, url) => {
 // /////////////////////////////////////////////////
 // - Add addItems function that fetches item urls + item ids (unique ids that the portal uses) from list page
 // /////////////////////////////////////////////////
-var trucks = [];
+var trucks: trucksType[] = [];
+
+type trucksType = {
+  url: string;
+  id: string;
+};
+
 const addItems = () => {
   axios(url)
-    .then((response) => {
+    .then((response: { data: any }) => {
       const html = response.data;
       const $ = cheerio.load(html);
 
       $("article", html).each(function () {
+        // @ts-ignore
         const id = $(this).attr("id");
+        // @ts-ignore
         const url = $(this).find("a").attr("href");
         trucks.push({
           url,
@@ -93,10 +116,10 @@ const addItems = () => {
       }
       // console.log(trucks);
     })
-    .catch((err) => console.log(err));
+    .catch((err: any) => console.log(err));
 
   // test using http://localhost:8000/truck
-  app.get("/truck", (req, res) => {
+  app.get("/truck", (req: any, res: { json: (arg0: any[]) => void }) => {
     res.json(trucks);
   });
 };
@@ -105,50 +128,69 @@ addItems();
 // /////////////////////////////////////////////////
 // - Add getTotalAdsCount function - shows how many total ads exist for the provided initial url
 // /////////////////////////////////////////////////
-var totalAdds = [];
+var totalAdds: addType[] = [];
+
+type addType = {
+  number: number;
+};
+
 const getTotalAdsCount = () => {
   axios(url)
-    .then((response) => {
+    .then((response: { data: any }) => {
       const html = response.data;
       const $ = cheerio.load(html);
       $('main[data-testid="search-results"]')
         .find("article")
         .find("a")
-        .each(function (index, element) {
+        .each(function (index: any, element: any) {
           totalAdds.push($(element).text());
         });
     })
-    .catch((err) => console.log(err));
+    .catch((err: any) => console.log(err));
 
   // test using http://localhost:8000/articles
-  app.get("/articles", (req, res) => {
-    res.json(totalAdds);
-  });
+  app.get("/articles", (req: any, res: { json: (arg0: any[]) => void }) =>
+    res.json(totalAdds)
+  );
 };
 getTotalAdsCount();
 
 // /////////////////////////////////////////////////
 // - Add scrapeTruckItem function - that scrapes the actual ads and parses into the format: item id, title, price, registration date, production date, mileage, power
 // /////////////////////////////////////////////////
-var truckItem = [];
+var truckItem: truckItemType[] = [];
+
+type truckItemType = {
+  item_id: string;
+  title: string;
+  price: string | number;
+  production_date: string | number;
+  milage: string | number;
+};
+
 const scrapeTruckItem = () => {
   axios(url)
-    .then((response) => {
+    .then((response: { data: any }) => {
       const html = response.data;
       const $ = cheerio.load(html);
 
       $("article", html).each(function () {
+        // @ts-ignore
         const title = $(this).find("h2").text();
+        // @ts-ignore
         const id = $(this).attr("id");
         // error: some article has price in 4th div, some has in 3rd div
         // but there's no id, class, or attributes which I can select and parse truck's id
+        // @ts-ignore
         const price = $(this).find("div:nth-of-type(3)").text();
+        // @ts-ignore
         const year = $(this)
           .find("div:nth-of-type(1)")
           .find("ul")
           .find("li:nth-of-type(1)")
           .text()
           .slice(0, 4);
+        // @ts-ignore
         const milage = $(this)
           .find("div:nth-of-type(1)")
           .find("ul")
@@ -164,10 +206,10 @@ const scrapeTruckItem = () => {
         });
       });
     })
-    .catch((err) => console.log(err));
+    .catch((err: any) => console.log(err));
 
   // test using http://localhost:8000/truck_item
-  app.get("/truck_item", (req, res) => {
+  app.get("/truck_item", (req: any, res: { json: (arg0: any[]) => void }) => {
     res.json(truckItem);
   });
 };
