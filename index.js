@@ -10,7 +10,7 @@ const url =
   "https://www.otomoto.pl/ciezarowe/uzytkowe/mercedes-benz/q-actros?search%5Bfilter_enum_damaged%5D=0&search%5Border%5D=created_at+%3Adesc&page=1";
 
 app.get("/", function (req, res) {
-  res.json("This is my webscraper");
+  res.json("This is my webScraper");
 });
 
 // global variables
